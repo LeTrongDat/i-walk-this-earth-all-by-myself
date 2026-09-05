@@ -6,7 +6,7 @@ import { useTravelStore } from '../store/travelStore'
 import { uid } from '../lib/format'
 
 async function findPlaces(query: string): Promise<PlaceResult[]> {
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } })
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&accept-language=en&limit=5&q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } })
   if (!response.ok) throw new Error('Place search is unavailable')
   const data = await response.json() as Array<{ place_id: number; display_name: string; lat: string; lon: string; name?: string; address?: { country?: string; city?: string; town?: string; village?: string } }>
   return data.map((place) => ({ id: String(place.place_id), name: place.name || place.address?.city || place.address?.town || place.address?.village || place.display_name.split(',')[0], country: place.address?.country ?? '', displayName: place.display_name, lat: Number(place.lat), lng: Number(place.lon) }))

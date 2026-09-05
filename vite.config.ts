@@ -26,9 +26,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\//,
+            urlPattern: /^https:\/\/tiles\.openfreemap\.org\//,
             handler: 'CacheFirst',
-            options: { cacheName: 'map-tiles', expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 } }
+            options: { cacheName: 'english-map', expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 30 } }
           },
           {
             urlPattern: /^https:\/\/images\.unsplash\.com\//,

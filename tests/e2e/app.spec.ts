@@ -11,7 +11,7 @@ test('loads the atlas and completes a trip planning and journal flow', async ({ 
   })
 
   await page.goto('')
-  await expect(page.getByRole('heading', { name: /Where will your story/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /where to next/i })).toBeVisible()
   await page.getByRole('link', { name: 'Trips', exact: true }).click()
   await page.getByRole('button', { name: 'New trip' }).click()
   await page.getByLabel('Trip name').fill('Paris in spring')
@@ -37,5 +37,5 @@ test('renders the responsive mobile navigation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('')
   await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: /Where will your story/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /where to next/i })).toBeVisible()
 })

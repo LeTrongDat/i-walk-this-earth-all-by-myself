@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowRight, CalendarDays, MapPin, Plus, Route, Sparkles, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { WorldMap } from '../components/WorldMap'
+import { TravelMap } from '../components/TravelMap'
 import { TripForm } from '../components/TripForm'
 import { StatusPill } from '../components/Ui'
 import { useTravelStore } from '../store/travelStore'
@@ -12,6 +12,7 @@ export function WorldPage() {
   const memories = useTravelStore((state) => state.memories)
   const hasSeenWelcome = useTravelStore((state) => state.hasSeenWelcome)
   const dismissWelcome = useTravelStore((state) => state.dismissWelcome)
+  const profile = useTravelStore((state) => state.profile)
   const [selectedTripId, setSelectedTripId] = useState<string>()
   const [newTrip, setNewTrip] = useState(false)
   const navigate = useNavigate()
@@ -31,9 +32,9 @@ export function WorldPage() {
 
       <section className="world-hero">
         <div className="world-copy">
-          <p className="eyebrow">Your world, one story at a time</p>
-          <h1>Where will your<br /><em>story</em> take you?</h1>
-          <p className="hero-intro">Plan the road ahead, trace the one beneath your feet, and keep the moments that made it yours.</p>
+          <p className="eyebrow">My travel map</p>
+          <h1>Hi {profile.name.split(' ')[0]}, where to next?</h1>
+          <p className="hero-intro">Plan a trip, track your route, and keep every photo and story together.</p>
           <button className="button primary button-large" onClick={() => setNewTrip(true)}><Plus size={19} /> Plan a new trip</button>
           <div className="world-stats">
             <div><strong>{countryCount(trips)}</strong><span>countries</span></div>
@@ -43,7 +44,7 @@ export function WorldPage() {
         </div>
 
         <div className="hero-map-wrap">
-          <WorldMap trips={trips} memories={memories} selectedTripId={selectedTripId} onSelectTrip={setSelectedTripId} />
+          <TravelMap trips={trips} memories={memories} selectedTripId={selectedTripId} onSelectTrip={setSelectedTripId} />
           <div className="map-legend no-print"><span><i className="legend-completed" /> Travelled</span><span><i className="legend-planned" /> Dreaming</span></div>
           {selectedTrip && <div className="map-trip-card no-print">
             <button className="card-close" onClick={() => setSelectedTripId(undefined)} aria-label="Close"><X size={17} /></button>

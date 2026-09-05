@@ -474,3 +474,155 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .journal-photos { max-height: 450px; }
   .trip-book-footer { break-before: page; min-height: 100vh; }
 }
+
+/* App-first visual system, closely following the compact Polarsteps product language. */
+:root {
+  --paper: #f5f5f3;
+  --paper-deep: #eceeeb;
+  --ink: #222423;
+  --muted: #747876;
+  --line: rgba(34, 36, 35, .11);
+  --white: #ffffff;
+  --coral: #f15b43;
+  --coral-dark: #d94834;
+  --forest: #263c35;
+  --sage: #607d74;
+  --shadow: 0 12px 36px rgba(29, 36, 32, .10);
+}
+
+body { background: #f5f5f3; }
+h1, h2, h3, .journey-body h3, .stop-info h3, .empty-journal h3, .empty-filter h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; letter-spacing: -.045em; }
+.eyebrow { color: var(--muted); letter-spacing: .11em; }
+.topbar { height: 66px; background: rgba(255,255,255,.96); box-shadow: 0 1px 0 var(--line); border: 0; }
+.wordmark { font-size: 15px; }
+.wordmark .brand-mark { width: 31px; height: 31px; border-radius: 50%; transform: none; }
+.desktop-nav a { border-radius: 9px; padding: 8px 12px; }
+.desktop-nav a:hover, .desktop-nav a.active { background: #f1f2f0; color: var(--ink); }
+.profile-chip > span:first-child, .profile-chip img { width: 32px; height: 32px; }
+.button { border-radius: 9px; min-height: 42px; }
+.button.primary { box-shadow: none; }
+.status-pill { border-radius: 6px; }
+
+.world-page { padding: 28px 0 0; }
+.welcome-note { max-width: 1240px; margin: 0 auto 18px; border: 1px solid #eadfa9; border-radius: 10px; }
+.world-hero { width: min(1240px, calc(100% - 40px)); min-height: 0; margin: auto; display: flex; flex-direction: column; overflow: visible; }
+.hero-map-wrap { order: 1; width: 100%; height: 570px; min-height: 570px; border-radius: 15px; border: 1px solid var(--line); box-shadow: 0 4px 18px rgba(27,35,31,.08); }
+.world-copy { order: 2; width: calc(100% - 96px); min-height: 0; margin: -88px auto 0; padding: 29px 34px; display: grid; grid-template-columns: 1fr auto; grid-template-areas: 'eyebrow action' 'title action' 'intro stats'; align-items: center; column-gap: 35px; background: white; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.world-copy .eyebrow { grid-area: eyebrow; margin-bottom: 5px; }
+.world-copy h1 { grid-area: title; font-size: clamp(32px, 4vw, 51px); line-height: 1.05; margin: 0 0 8px; }
+.world-copy h1 br { display: none; }
+.world-copy h1 em { color: inherit; font-style: normal; }
+.world-copy .hero-intro { grid-area: intro; font-size: 14px; line-height: 1.5; margin: 0; max-width: 570px; }
+.world-copy > .button { grid-area: action; align-self: center; }
+.world-stats { grid-area: stats; width: auto; margin: 0; padding: 0 0 0 30px; border: 0; border-left: 1px solid var(--line); gap: 25px; }
+.world-stats strong { font-family: 'DM Sans'; font-size: 20px; font-weight: 600; }
+.world-stats span { letter-spacing: .08em; }
+.map-legend { left: auto; right: 17px; top: 48px; bottom: auto; border-radius: 9px; box-shadow: 0 4px 20px rgba(0,0,0,.12); }
+.map-trip-card { top: 17px; left: 17px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.16); }
+.map-trip-card img { border-radius: 8px; }
+
+.world-map .maplibregl-map { width: 100%; height: 100%; min-height: inherit; font-family: 'DM Sans', sans-serif; }
+.world-map { position: relative; }
+.map-loading { width: 100%; height: 100%; min-height: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; background: #e9ece9; color: var(--muted); font-size: 11px; }
+.map-loading span { width: 24px; height: 24px; border: 3px solid rgba(96,125,116,.2); border-top-color: var(--sage); border-radius: 50%; animation: spin .8s linear infinite; }
+.map-loading p { margin: 0; }
+.map-language-badge { position: absolute; z-index: 4; top: 11px; right: 11px; padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(0,0,0,.09); color: #646866; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; pointer-events: none; }
+.world-map .maplibregl-ctrl-group { border-radius: 8px; box-shadow: 0 3px 15px rgba(0,0,0,.13); overflow: hidden; }
+.world-map .maplibregl-ctrl button { width: 34px; height: 34px; }
+.world-map .maplibregl-ctrl-attrib { font-size: 9px; }
+.map-marker { appearance: none; padding: 0; border: 3px solid white; width: 25px; height: 25px; cursor: pointer; }
+.map-marker.photo-marker { width: 48px; height: 48px; padding: 2px; background: white; border: 2px solid white; box-shadow: 0 3px 12px rgba(0,0,0,.28); }
+.map-marker.photo-marker img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+.content-section { padding-top: 95px; }
+.section-heading h2 { font-size: clamp(30px, 3vw, 43px); }
+.journey-card, .new-journey-card { border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(31,37,33,.04); }
+.journey-image { height: 235px; }
+.journey-body h3 { font-size: 21px; letter-spacing: -.025em; }
+.journey-body { padding: 18px; }
+.new-journey-card { min-height: 389px; }
+.new-journey-card strong { font-family: 'DM Sans'; font-size: 17px; font-weight: 600; }
+.memory-strip { margin-top: 25px; min-height: 540px; }
+.memory-strip-copy h2 { font-size: clamp(38px, 4vw, 55px); }
+
+.standard-page { padding-top: 65px; }
+.page-header h1 { font-size: clamp(42px, 6vw, 66px); }
+.trip-row { min-height: 205px; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 2px 7px rgba(31,37,33,.04); }
+.trip-row-image { height: 181px; border-radius: 8px; }
+.trip-row-content h2 { font-size: 26px; }
+
+.trip-page { display: flex; flex-direction: column; }
+.trip-map-first { order: 1; height: 610px; display: block; position: relative; }
+.trip-map-first .world-map, .trip-map-first .world-map .maplibregl-map { min-height: 610px; }
+.trip-map-title { position: absolute; z-index: 3; right: 28px; bottom: 28px; width: min(390px, calc(100% - 56px)); padding: 22px 24px; border-radius: 12px; background: rgba(255,255,255,.95); box-shadow: 0 7px 28px rgba(25,34,29,.16); backdrop-filter: blur(12px); }
+.trip-map-title h2 { font-size: 28px; margin: 0 0 7px; }
+.trip-map-title > p:last-child { margin: 0; font-size: 12px; }
+.trip-cover { order: 2; min-height: 360px; margin: 24px auto 0; width: min(1240px, calc(100% - 40px)); border-radius: 14px; overflow: hidden; padding: 42px; }
+.trip-cover-content h1 { font-size: clamp(42px, 6vw, 70px); line-height: 1; margin: 15px 0 12px; }
+.trip-cover-content > p { font-size: 15px; }
+.trip-cover-tools { left: 25px; right: 25px; top: 22px; }
+.trip-overview { order: 3; width: min(1160px, calc(100% - 80px)); margin: -22px auto 0; position: relative; z-index: 2; min-height: 104px; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.tracking-notice { order: 4; }
+.trip-story-layout { order: 5; padding-top: 85px; }
+.trip-book-footer { order: 6; }
+.trip-stat strong { font-family: 'DM Sans'; font-size: 21px; font-weight: 600; }
+.panel-heading h2 { font-size: 30px; }
+.journal-content > h2 { font-size: clamp(27px, 2.8vw, 38px); }
+.journal-story { font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.75; }
+.stop-node { border-radius: 50%; }
+.library-card, .discover-card { border-radius: 12px; }
+.library-copy h2 { font-size: 23px; }
+.library-copy > span { font-family: 'DM Sans'; }
+.discover-hero h1, .profile-intro h1 { font-family: 'DM Sans'; font-weight: 600; letter-spacing: -.055em; }
+.discover-hero { min-height: 350px; color: var(--ink); background: white; border-bottom: 1px solid var(--line); }
+.discover-hero .eyebrow { color: var(--muted); }
+.discover-hero h1 { font-size: clamp(46px, 6vw, 76px); line-height: .96; }
+.discover-hero h1 em { color: var(--coral); font-style: normal; }
+.discover-hero p:not(.eyebrow) { color: var(--muted); font-size: 16px; }
+.discover-hero .button.light { color: white; background: var(--coral); }
+.discover-stamp { color: var(--coral); border-color: var(--coral); }
+.profile-hero { min-height: 360px; color: var(--ink); background: white; border-bottom: 1px solid var(--line); }
+.profile-avatar { width: 170px; height: 170px; border: 5px solid #f0f0ed; }
+.profile-avatar > span { font-size: 48px; }
+.profile-avatar button { border-color: white; }
+.profile-intro .eyebrow { color: var(--muted); }
+.profile-intro h1 { font-size: clamp(44px, 6vw, 68px); }
+.profile-intro > p:not(.eyebrow), .profile-intro > span { color: var(--muted); }
+.profile-intro .button.light { background: #f0f1ef; color: var(--ink); }
+.profile-avatar > span { font-family: 'DM Sans'; font-weight: 600; }
+.profile-stats strong { font-family: 'DM Sans'; font-weight: 600; }
+.country-stamp { font-family: 'DM Sans'; font-size: 13px; font-weight: 600; }
+.modal { border-radius: 14px; }
+.modal-header h2 { font-size: 27px; }
+
+@media (max-width: 1000px) {
+  .world-copy { grid-template-columns: 1fr auto; grid-template-areas: 'eyebrow action' 'title action' 'intro intro' 'stats stats'; }
+  .world-stats { padding: 18px 0 0; margin-top: 18px; border-left: 0; border-top: 1px solid var(--line); }
+  .trip-map-first { height: 540px; }
+  .trip-map-first .world-map, .trip-map-first .world-map .maplibregl-map { min-height: 540px; }
+}
+
+@media (max-width: 720px) {
+  .topbar { height: 58px; }
+  .mobile-nav { background: rgba(255,255,255,.97); }
+  .world-page { padding-top: 12px; }
+  .welcome-note { margin: 0 12px 12px; }
+  .world-hero { width: 100%; }
+  .hero-map-wrap { height: 430px; min-height: 430px; border-radius: 0; border-left: 0; border-right: 0; }
+  .world-copy { width: calc(100% - 24px); margin-top: -45px; padding: 22px; grid-template-columns: 1fr; grid-template-areas: 'eyebrow' 'title' 'intro' 'action' 'stats'; gap: 0; border-radius: 12px; }
+  .world-copy h1 { font-size: 32px; margin-bottom: 8px; }
+  .world-copy .hero-intro { font-size: 13px; }
+  .world-copy > .button { margin-top: 18px; justify-self: start; }
+  .world-stats { width: 100%; justify-content: space-between; }
+  .content-section { padding-top: 65px; }
+  .journey-image { height: 225px; }
+  .new-journey-card { min-height: 220px; }
+  .trip-map-first { height: 465px; }
+  .trip-map-first .world-map, .trip-map-first .world-map .maplibregl-map { min-height: 465px; }
+  .trip-map-title { right: 12px; bottom: 12px; width: calc(100% - 24px); padding: 16px; }
+  .trip-map-title h2 { font-size: 22px; }
+  .trip-cover { width: calc(100% - 24px); min-height: 430px; margin-top: 12px; padding: 24px; padding-bottom: 45px; }
+  .trip-cover-content h1 { font-size: 40px; }
+  .trip-overview { width: calc(100% - 48px); margin-top: -20px; }
+  .profile-intro h1 { font-size: 48px; }
+}

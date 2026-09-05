@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { BedDouble, CalendarDays, ChevronLeft, CircleStop, Clock3, Edit3, Ellipsis, Footprints, ImagePlus, MapPin, Navigation, Plus, Printer, Share2, Sparkles, Trash2 } from 'lucide-react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { WorldMap } from '../components/WorldMap'
+import { TravelMap } from '../components/TravelMap'
 import { MemoryForm } from '../components/MemoryForm'
 import { StopForm } from '../components/StopForm'
 import { TripForm } from '../components/TripForm'
@@ -70,8 +70,8 @@ export function TripPage() {
       </section>
       {isTracking && <div className="tracking-notice no-print"><span className="tracking-pulse" /><div><strong>Recording your route</strong><span>Keep this installed web app open while travelling. {trip.route.length} GPS points saved privately.</span></div></div>}
 
-      <section className="trip-map-section">
-        <WorldMap trips={[trip]} memories={memories} selectedTripId={trip.id} />
+      <section className="trip-map-section trip-map-first">
+        <TravelMap trips={[trip]} memories={memories} selectedTripId={trip.id} />
         <div className="trip-map-title"><p className="eyebrow">The route</p><h2>{trip.stops.length ? `${trip.stops[0].name} to ${trip.stops.at(-1)?.name}` : 'Your map is waiting'}</h2><p>{trip.stops.length ? 'Every line begins with a place.' : 'Add your first place to begin drawing this journey.'}</p></div>
       </section>
 
