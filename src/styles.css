@@ -1,5 +1,5 @@
 :root {
-  --paper: #f4f1eb;
+  --paper: #f5f7f8;
   --paper-deep: #eae5dc;
   --ink: #252825;
   --muted: #6f736d;
@@ -625,4 +625,120 @@ h1, h2, h3, .journey-body h3, .stop-info h3, .empty-journal h3, .empty-filter h3
   .trip-cover-content h1 { font-size: 40px; }
   .trip-overview { width: calc(100% - 48px); margin-top: -20px; }
   .profile-intro h1 { font-size: 48px; }
+}
+
+/* App surfaces: satellite canvas, white sheets, compact photo timeline. */
+:root { --paper: #f4f7f8; --ink: #12313e; --muted: #667c88; --coral: #ef0750; --coral-dark: #c80543; --line: #e4eaee; --white: #fff; }
+h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
+.topbar { height: 62px; background: #fff; }
+.button.primary { box-shadow: none; }
+.atlas-screen { display: grid; grid-template-columns: minmax(320px, 390px) 1fr; height: calc(100dvh - 62px); min-height: 640px; }
+.atlas-map { grid-column: 2; grid-row: 1; position: relative; min-width: 0; overflow: hidden; background: #142b38; }
+.atlas-map .world-map, .atlas-map .maplibregl-map { min-height: 100%; }
+.atlas-map-title { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 20px; font-weight: 600; text-shadow: 0 2px 6px #001825; pointer-events: none; }
+.atlas-sheet { grid-column: 1; grid-row: 1; z-index: 2; background: #fff; overflow-y: auto; box-shadow: 5px 0 25px #00182718; }
+.sheet-handle { display: none; }
+.atlas-profile { text-align: center; padding: 24px; position: relative; }
+.atlas-avatar { width: 76px; height: 76px; border: 4px solid #fff; box-shadow: 0 0 0 1px #e1e7e9; border-radius: 50%; background: #163d4b; color: #fff; display: grid; place-items: center; font-size: 28px; margin: 0 auto 12px; overflow: hidden; }
+.atlas-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.atlas-settings { position: absolute; right: 18px; top: 20px; }
+.atlas-profile h1 { font-size: 25px; margin: 0 0 5px; letter-spacing: -.04em; }
+.atlas-profile > p { display: flex; gap: 5px; align-items: center; justify-content: center; font-size: 14px; color: var(--muted); margin-bottom: 18px; }
+.atlas-stats { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 22px; }
+.atlas-stats strong, .atlas-stats span { display: block; }
+.atlas-stats strong { font-size: 22px; }
+.atlas-stats span { font-size: 13px; color: var(--muted); }
+.atlas-tabs { display: flex; border-bottom: 1px solid var(--line); }
+.atlas-tabs button { flex: 1; padding: 15px; border: 0; border-bottom: 3px solid transparent; background: #fff; color: var(--muted); font-weight: 600; cursor: pointer; }
+.atlas-tabs button[aria-selected=true] { color: var(--ink); border-bottom-color: var(--coral); }
+.atlas-trips { padding: 16px; display: grid; gap: 16px; }
+.sample-note { display: flex; align-items: center; font-size: 12px; color: var(--muted); gap: 5px; }
+.sample-note .icon-button { flex: none; }
+.atlas-trip { position: relative; display: block; min-height: 210px; border-radius: 14px; overflow: hidden; color: #fff; background: #12313e; }
+.atlas-trip > img, .atlas-trip-shade { position: absolute; width: 100%; height: 100%; object-fit: cover; }
+.atlas-trip-shade { background: linear-gradient(transparent 15%, #00131fce); }
+.atlas-trip > .status-pill { position: absolute; top: 14px; left: 14px; font-size: 12px; }
+.atlas-trip-copy { position: absolute; bottom: 18px; left: 18px; right: 18px; }
+.atlas-trip-copy > span { font-size: 12px; }
+.atlas-trip-copy h2 { font-size: 24px; line-height: 1.13; margin: 8px 0; }
+.atlas-trip-copy p { font-size: 13px; margin: 0; }
+.atlas-summary { padding: 24px; }
+.atlas-summary h2 { font-size: 21px; }
+.atlas-summary > div { padding: 22px 0; border-bottom: 1px solid var(--line); }
+.atlas-summary strong { display: block; font-size: 32px; }
+.atlas-summary span, .atlas-empty { font-size: 14px; color: var(--muted); }
+.map-layer-toggle { position: absolute; right: 14px; top: 14px; border: 0; border-radius: 22px; background: #fff; color: #12313e; padding: 10px 15px; font-size: 14px; cursor: pointer; box-shadow: 0 2px 10px #00182533; }
+.map-feedback { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(290px, 85%); padding: 18px; background: #fff; border-radius: 12px; box-shadow: var(--shadow); font-size: 14px; text-align: center; }
+.map-feedback button { display: block; margin: 12px auto 0; border: 0; border-radius: 18px; padding: 10px 18px; background: var(--coral); color: #fff; cursor: pointer; }
+.map-marker { background: var(--coral); border-radius: 50%; }
+.map-trip-card { max-width: calc(100% - 32px); }
+.trip-page { position: relative; background: #f4f7f8; }
+.trip-cover { order: 0; width: 100%; min-height: 0; margin: 0; padding: 16px 28px; border-radius: 0; color: var(--ink); background: #fff; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px; }
+.trip-cover-shade { display: none; }
+.trip-cover-tools { position: static; grid-column: 2; grid-row: 1; gap: 12px; }
+.trip-cover-content { grid-column: 1; grid-row: 1; padding: 0; }
+.trip-cover-content h1 { font-size: 25px; line-height: 1.2; margin: 6px 0; }
+.trip-cover-content > p { display: none; }
+.trip-cover-meta { font-size: 12px; color: var(--muted); margin-top: 7px; }
+.trip-cover-tools .round-button { color: var(--ink); background: #f0f4f6; border: 0; font-size: 13px; }
+.trip-map-first { height: 650px; order: 1; }
+.trip-map-first .world-map, .trip-map-first .world-map .maplibregl-map { min-height: 650px; }
+.step-carousel { position: absolute; bottom: 30px; left: 0; right: 0; display: flex; gap: 16px; padding: 18px 28px; overflow-x: auto; background: linear-gradient(transparent, #08212c55); }
+.step-preview { position: relative; flex: 0 0 190px; height: 155px; overflow: hidden; border: 3px solid #fff; border-radius: 14px; background: #173d4b; color: #fff; padding: 75px 14px 12px; text-align: left; cursor: pointer; box-shadow: 0 5px 18px #001a2844; }
+.step-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(.65); }
+.step-preview strong, .step-preview > span { display: block; position: relative; font-size: 13px; }
+.step-preview strong { font-size: 20px; margin-bottom: 4px; }
+.step-preview .step-preview-number { position: absolute; top: 10px; left: 12px; font-size: 12px; font-weight: 600; }
+.step-preview[aria-pressed=true] { border-color: var(--coral); }
+.step-add { flex-basis: 150px; background: #fff; color: var(--coral); text-align: center; padding: 30px 10px; }
+.step-add strong { font-size: 16px; margin-top: 12px; }
+.trip-overview { order: 2; margin: 0; width: 100%; border-radius: 0; border: 0; border-bottom: 1px solid var(--line); min-height: 88px; box-shadow: none; padding: 12px 24px; }
+.trip-detail-tabs { order: 4; width: min(760px, 100%); margin: 16px auto 0; scroll-margin-top: 16px; }
+.trip-story-layout { order: 5; padding: 24px; margin: 0 auto; width: min(1200px, 100%); gap: 32px; }
+.panel-heading h2 { font-size: 23px; }
+.journal-story { font-size: 16px; }
+.journal-content > h2 { font-size: 25px; }
+.trip-book-footer { display: none; }
+.standard-page { padding-top: 30px; }
+.page-header h1 { font-size: 32px; }
+.page-header > div > p:not(.eyebrow) { font-size: 14px; }
+.profile-hero { min-height: 220px; padding-block: 32px; }
+.profile-intro h1 { font-size: 32px; }
+.profile-avatar { width: 110px; height: 110px; }
+.discover-hero { min-height: 220px; padding-block: 30px; }
+.discover-hero h1 { font-size: 34px; line-height: 1.1; }
+.discover-stamp { display: none; }
+@media (max-width: 720px) {
+  .topbar { height: 54px; padding-inline: 16px; }
+  .atlas-screen { display: flex; flex-direction: column; height: auto; min-height: 0; }
+  .atlas-map { height: 40dvh; min-height: 280px; flex: none; }
+  .atlas-map-title { display: none; }
+  .atlas-sheet { margin-top: -16px; border-radius: 22px 22px 0 0; overflow: visible; padding-bottom: 20px; }
+  .sheet-handle { display: block; width: 34px; height: 4px; background: #bdc9cf; border-radius: 3px; margin: 10px auto 0; }
+  .atlas-profile { padding: 0 24px 14px; }
+  .atlas-avatar { margin-top: -35px; position: relative; }
+  .atlas-settings { top: 10px; }
+  .atlas-profile h1 { font-size: 24px; }
+  .atlas-stats { margin-bottom: 16px; }
+  .atlas-trips { padding: 16px; }
+  .atlas-trip { min-height: 225px; }
+  .mobile-nav a.active { color: var(--coral); }
+  .map-layer-toggle { top: 14px; bottom: auto; right: 10px; font-size: 14px; }
+  .trip-cover { display: flex; flex-direction: column-reverse; gap: 12px; padding: 12px 16px; align-items: stretch; }
+  .trip-cover-tools { display: flex; justify-content: space-between; }
+  .trip-cover-content h1 { font-size: 22px; }
+  .trip-cover-content .status-pill { display: none; }
+  .trip-map-first { height: 530px; }
+  .trip-map-first .world-map, .trip-map-first .world-map .maplibregl-map { min-height: 530px; }
+  .trip-map-first .map-layer-toggle { bottom: auto; top: 14px; }
+  .step-carousel { gap: 12px; padding: 12px 16px; }
+  .step-preview { flex-basis: 165px; height: 135px; padding-top: 60px; }
+  .step-preview strong { font-size: 18px; }
+  .step-add { flex-basis: 125px; padding-top: 25px; }
+  .trip-overview { padding: 15px; gap: 12px; }
+  .trip-stat strong { font-size: 18px; }
+  .trip-story-layout { display: block; padding: 20px 16px; }
+  .detail-journal .itinerary-panel, .detail-plan .journal-panel { display: none; }
+  .trip-detail-tabs { margin-top: 0; }
+  .journal-content > h2 { font-size: 23px; }
 }

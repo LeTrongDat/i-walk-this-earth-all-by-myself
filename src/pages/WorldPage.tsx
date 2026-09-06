@@ -1,76 +1,51 @@
-import { useMemo, useState } from 'react'
-import { ArrowRight, CalendarDays, MapPin, Plus, Route, Sparkles, X } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowRight, MapPin, Plus, Settings, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { TravelMap } from '../components/TravelMap'
 import { TripForm } from '../components/TripForm'
 import { StatusPill } from '../components/Ui'
 import { useTravelStore } from '../store/travelStore'
-import { compactDistance, countryCount, formatDate, tripDistance } from '../lib/format'
+import { compactDistance, countryCount, formatDate, tripDistance, tripDuration } from '../lib/format'
 
 export function WorldPage() {
-  const trips = useTravelStore((state) => state.trips)
-  const memories = useTravelStore((state) => state.memories)
-  const hasSeenWelcome = useTravelStore((state) => state.hasSeenWelcome)
-  const dismissWelcome = useTravelStore((state) => state.dismissWelcome)
-  const profile = useTravelStore((state) => state.profile)
+  const { trips, memories, profile, hasSeenWelcome, dismissWelcome } = useTravelStore()
   const [selectedTripId, setSelectedTripId] = useState<string>()
   const [newTrip, setNewTrip] = useState(false)
+  const [tab, setTab] = useState<'trips' | 'stats'>('trips')
   const navigate = useNavigate()
   const selectedTrip = trips.find((trip) => trip.id === selectedTripId)
-  const totalDistance = useMemo(() => trips.reduce((sum, trip) => sum + tripDistance(trip), 0), [trips])
-  const latestMemories = [...memories].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3)
+  const distance = trips.reduce((sum, trip) => sum + tripDistance(trip), 0)
 
-  return (
-    <div className="world-page">
-      {!hasSeenWelcome && (
-        <div className="welcome-note no-print">
-          <div className="welcome-icon"><Sparkles size={20} /></div>
-          <div><strong>Your private atlas is ready.</strong><span>Two example journeys are waiting for you. Edit them, delete them, or begin somewhere new.</span></div>
-          <button className="icon-button" onClick={dismissWelcome} aria-label="Dismiss"><X size={18} /></button>
-        </div>
-      )}
-
-      <section className="world-hero">
-        <div className="world-copy">
-          <p className="eyebrow">My travel map</p>
-          <h1>Hi {profile.name.split(' ')[0]}, where to next?</h1>
-          <p className="hero-intro">Plan a trip, track your route, and keep every photo and story together.</p>
-          <button className="button primary button-large" onClick={() => setNewTrip(true)}><Plus size={19} /> Plan a new trip</button>
-          <div className="world-stats">
-            <div><strong>{countryCount(trips)}</strong><span>countries</span></div>
-            <div><strong>{trips.length}</strong><span>journeys</span></div>
-            <div><strong>{compactDistance(totalDistance)}</strong><span>travelled</span></div>
-          </div>
-        </div>
-
-        <div className="hero-map-wrap">
-          <TravelMap trips={trips} memories={memories} selectedTripId={selectedTripId} onSelectTrip={setSelectedTripId} />
-          <div className="map-legend no-print"><span><i className="legend-completed" /> Travelled</span><span><i className="legend-planned" /> Dreaming</span></div>
-          {selectedTrip && <div className="map-trip-card no-print">
-            <button className="card-close" onClick={() => setSelectedTripId(undefined)} aria-label="Close"><X size={17} /></button>
-            <img src={selectedTrip.cover} alt="" />
-            <div><StatusPill status={selectedTrip.status} /><h3>{selectedTrip.title}</h3><p><MapPin size={14} /> {selectedTrip.stops.map((stop) => stop.name).join(' · ') || 'Add your first place'}</p><Link to={`/trips/${selectedTrip.id}`}>Open journey <ArrowRight size={15} /></Link></div>
-          </div>}
-        </div>
-      </section>
-
-      <section className="content-section journey-section">
-        <div className="section-heading"><div><p className="eyebrow">Your journeys</p><h2>Somewhere you’ve been,<br />somewhere you’re going.</h2></div><Link className="text-link" to="/trips">View all trips <ArrowRight size={16} /></Link></div>
-        <div className="journey-grid">
-          {trips.slice(0, 3).map((trip) => <Link to={`/trips/${trip.id}`} className="journey-card" key={trip.id}>
-            <div className="journey-image"><img src={trip.cover} alt="" /><StatusPill status={trip.status} /><span className="stop-count"><MapPin size={14} /> {trip.stops.length} stops</span></div>
-            <div className="journey-body"><p>{formatDate(trip.startDate, 'MMM yyyy')}</p><h3>{trip.title}</h3><span>{trip.summary}</span><div className="journey-meta"><span><CalendarDays size={15} /> {formatDate(trip.startDate, 'MMM d')} – {formatDate(trip.endDate, 'MMM d')}</span><span><Route size={15} /> {compactDistance(tripDistance(trip))}</span></div></div>
-          </Link>)}
-          <button className="new-journey-card" onClick={() => setNewTrip(true)}><span><Plus size={24} /></span><strong>Begin a new journey</strong><small>Even the longest road starts with one place.</small></button>
-        </div>
-      </section>
-
-      {latestMemories.length > 0 && <section className="memory-strip">
-        <div className="memory-strip-copy"><p className="eyebrow">From your journal</p><h2>Little moments.<br />Kept forever.</h2><p>The roads blur with time. The way a place felt doesn’t have to.</p><Link className="button light" to="/memories">Open your memories <ArrowRight size={17} /></Link></div>
-        <div className="memory-collage">{latestMemories.map((memory, index) => <Link to={`/trips/${memory.tripId}`} key={memory.id} className={`memory-photo memory-photo-${index + 1}`}><img src={memory.photos[0]?.src || trips.find((trip) => trip.id === memory.tripId)?.cover} alt="" /><span>{memory.place}</span></Link>)}</div>
-      </section>}
-
-      {newTrip && <TripForm onClose={() => setNewTrip(false)} onSaved={(id) => navigate(`/trips/${id}`)} />}
-    </div>
-  )
+  return <div className="atlas-screen">
+    <section className="atlas-map" aria-label="Your travel map">
+      <TravelMap trips={trips} memories={memories} selectedTripId={selectedTripId} onSelectTrip={setSelectedTripId} />
+      <div className="atlas-map-title">My travel map</div>
+      {selectedTrip && <div className="map-trip-card">
+        <button className="card-close" onClick={() => setSelectedTripId(undefined)} aria-label="Show all trips"><X size={18} /></button>
+        <img src={selectedTrip.cover} alt="" />
+        <div><StatusPill status={selectedTrip.status} /><h3>{selectedTrip.title}</h3><Link to={`/trips/${selectedTrip.id}`}>View trip <ArrowRight size={16} /></Link></div>
+      </div>}
+    </section>
+    <section className="atlas-sheet">
+      <div className="sheet-handle" />
+      <div className="atlas-profile">
+        <div className="atlas-avatar">{profile.avatar ? <img src={profile.avatar} alt="" /> : profile.name.charAt(0)}</div>
+        <Link to="/profile" className="atlas-settings icon-button" aria-label="Edit profile"><Settings size={20} /></Link>
+        <h1>{profile.name}</h1>
+        <p><MapPin size={14} />{profile.home}</p>
+        <div className="atlas-stats"><div><strong>{countryCount(trips)}</strong><span>countries</span></div><div><strong>{trips.length}</strong><span>trips</span></div><div><strong>{memories.length}</strong><span>memories</span></div></div>
+        <button className="button primary full-width" onClick={() => setNewTrip(true)}><Plus size={18} /> Add a trip</button>
+      </div>
+      <div className="atlas-tabs" role="tablist" aria-label="Travel overview"><button role="tab" aria-selected={tab === 'trips'} onClick={() => setTab('trips')}>Trips</button><button role="tab" aria-selected={tab === 'stats'} onClick={() => setTab('stats')}>Stats</button></div>
+      {tab === 'trips' ? <div className="atlas-trips" role="tabpanel" aria-label="Trips">
+        {!hasSeenWelcome && <div className="sample-note"><span>Example trips · Your changes stay on this device.</span><button className="icon-button" onClick={dismissWelcome} aria-label="Dismiss example notice"><X size={16} /></button></div>}
+        {trips.map((trip) => <Link to={`/trips/${trip.id}`} className="atlas-trip" key={trip.id}>
+          <img src={trip.cover} alt="" /><div className="atlas-trip-shade" /><StatusPill status={trip.status} />
+          <div className="atlas-trip-copy"><span>{formatDate(trip.startDate, 'd MMM yyyy')} — {trip.endDate ? formatDate(trip.endDate, 'd MMM yyyy') : 'Ongoing'}</span><h2>{trip.title}</h2><p>{tripDuration(trip)} days · {trip.stops.length} steps · {compactDistance(tripDistance(trip))}</p></div>
+        </Link>)}
+        {!trips.length && <p className="atlas-empty">Your first trip starts here. Add a trip to begin planning.</p>}
+      </div> : <div className="atlas-summary" role="tabpanel" aria-label="Stats"><h2>Your travels in numbers</h2><div><strong>{compactDistance(distance)}</strong><span>total distance</span></div><div><strong>{trips.reduce((sum, trip) => sum + trip.stops.length, 0)}</strong><span>places visited or planned</span></div><div><strong>{memories.reduce((sum, memory) => sum + memory.photos.length, 0)}</strong><span>photos saved</span></div></div>}
+    </section>
+    {newTrip && <TripForm onClose={() => setNewTrip(false)} onSaved={(id) => navigate(`/trips/${id}`)} />}
+  </div>
 }

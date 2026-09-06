@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, Bookmark, MapPin, Plus, Sparkles } from 'lucide-react'
+import { ArrowRight, Bookmark, MapPin, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { TripForm } from '../components/TripForm'
 
@@ -18,8 +18,8 @@ export function DiscoverPage() {
   const navigate = useNavigate()
   return (
     <div className="discover-page">
-      <section className="discover-hero"><div><p className="eyebrow">Follow your curiosity</p><h1>The world is full<br />of <em>somewhere next.</em></h1><p>Slow routes and remarkable places for the journey you haven’t planned yet.</p><button className="button light" onClick={() => setNewTrip(true)}><Plus size={18} /> Start planning</button></div><div className="discover-stamp"><Sparkles size={22} /><span>Six ideas<br />for you</span></div></section>
-      <section className="discover-content"><div className="section-heading"><div><p className="eyebrow">Worth going slowly for</p><h2>Journeys to remember</h2></div></div><div className="discover-grid">{places.map((place, index) => <article className={`discover-card discover-card-${index + 1}`} key={place.name}><img src={place.image} alt="" /><button className={`save-button no-print ${saved.includes(place.name) ? 'saved' : ''}`} onClick={() => setSaved((items) => items.includes(place.name) ? items.filter((item) => item !== place.name) : [...items, place.name])} aria-label="Save place"><Bookmark size={18} fill={saved.includes(place.name) ? 'currentColor' : 'none'} /></button><div className="discover-overlay"><span>{place.tag}</span><h3>{place.name}</h3><p><MapPin size={14} /> {place.country}</p></div><div className="discover-detail"><p>{place.note}</p><button onClick={() => setNewTrip(true)}>Plan this journey <ArrowRight size={15} /></button></div></article>)}</div></section>
+      <section className="discover-hero"><div><h1>Discover</h1><p>Travel ideas for your next trip.</p><button className="button primary" onClick={() => setNewTrip(true)}><Plus size={18} /> Plan a trip</button></div></section>
+      <section className="discover-content"><div className="section-heading"><h2>Featured places</h2></div><div className="discover-grid">{places.map((place, index) => <article className={`discover-card discover-card-${index + 1}`} key={place.name}><img src={place.image} alt="" /><button className={`save-button no-print ${saved.includes(place.name) ? 'saved' : ''}`} onClick={() => setSaved((items) => items.includes(place.name) ? items.filter((item) => item !== place.name) : [...items, place.name])} aria-label="Save place"><Bookmark size={18} fill={saved.includes(place.name) ? 'currentColor' : 'none'} /></button><div className="discover-overlay"><span>{place.tag}</span><h3>{place.name}</h3><p><MapPin size={14} /> {place.country}</p></div><div className="discover-detail"><p>{place.note}</p><button onClick={() => setNewTrip(true)}>Plan this journey <ArrowRight size={15} /></button></div></article>)}</div></section>
       {newTrip && <TripForm onClose={() => setNewTrip(false)} onSaved={(id) => navigate(`/trips/${id}`)} />}
     </div>
   )

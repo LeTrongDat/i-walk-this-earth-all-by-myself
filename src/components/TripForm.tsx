@@ -4,6 +4,7 @@ import { Modal, Field } from './Ui'
 import { useTravelStore } from '../store/travelStore'
 import type { Trip, TripStatus, TripVisibility } from '../types'
 import { uid } from '../lib/format'
+import { useDurableSave } from '../lib/useDurableSave'
 
 const fallbackCover = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=85'
 
@@ -17,15 +18,15 @@ export function TripForm({ trip, onClose, onSaved }: { trip?: Trip; onClose: () 
   const [endDate, setEndDate] = useState(trip?.endDate ?? '')
   const [status, setStatus] = useState<TripStatus>(trip?.status ?? 'planned')
   const [visibility, setVisibility] = useState<TripVisibility>(trip?.visibility ?? 'private')
+  const { saving, error, setError, save: commit } = useDurableSave()
 
   function save(event: FormEvent) {
     event.preventDefault()
+    if (!title.trim()) { setError('Enter a trip name.'); return }
     const now = new Date().toISOString()
     const id = trip?.id ?? uid('trip')
-    if (trip) updateTrip(trip.id, { title, summary, cover: cover || fallbackCover, startDate, endDate: endDate || undefined, status, visibility })
-    else addTrip({ id, title, summary, cover: cover || fallbackCover, startDate, endDate: endDate || undefined, status, visibility, stops: [], route: [], createdAt: now, updatedAt: now })
-    onSaved?.(id)
-    onClose()
+    const details = { title: title.trim(), summary, cover: cover || fallbackCover, startDate, endDate: endDate || undefined, status, visibility }
+    void commit(() => trip ? updateTrip(trip.id, details) : addTrip({ id, ...details, stops: [], route: [], createdAt: now, updatedAt: now }), () => { onSaved?.(id); onClose() })
   }
 
   return (
@@ -42,9 +43,10 @@ export function TripForm({ trip, onClose, onSaved }: { trip?: Trip; onClose: () 
         </Field>
         <div className="form-grid">
           <Field label="Journey state"><select value={status} onChange={(event) => setStatus(event.target.value as TripStatus)}><option value="planned">Planned</option><option value="active">Travelling now</option><option value="completed">Completed</option></select></Field>
-          <Field label="Privacy"><select value={visibility} onChange={(event) => setVisibility(event.target.value as TripVisibility)}><option value="private">Only me</option><option value="link">Anyone with link</option><option value="public">Public</option></select></Field>
+          <Field label="Privacy" hint="Stored on this device only. Public sharing is not available."><select value={visibility} onChange={(event) => setVisibility(event.target.value as TripVisibility)}><option value="private">Only me</option><option value="link">Link sharing preference (not published)</option><option value="public">Public preference (not published)</option></select></Field>
         </div>
-        <footer className="modal-actions"><button type="button" className="button ghost" onClick={onClose}>Cancel</button><button className="button primary" type="submit">{trip ? 'Save changes' : 'Create trip'}</button></footer>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <footer className="modal-actions"><button type="button" className="button ghost" disabled={saving} onClick={onClose}>Cancel</button><button className="button primary" type="submit" disabled={saving}>{saving ? 'Saving…' : trip ? 'Save changes' : 'Create trip'}</button></footer>
       </form>
     </Modal>
   )

@@ -4,14 +4,16 @@ import { Field, Modal } from './Ui'
 import { useTravelStore } from '../store/travelStore'
 import type { Memory, Photo, Trip } from '../types'
 import { uid } from '../lib/format'
+import { useDurableSave } from '../lib/useDurableSave'
 
 async function readPhotos(files: FileList): Promise<Photo[]> {
-  const selected = Array.from(files).slice(0, 8)
-  const allowed = selected.filter((file) => file.type.startsWith('image/') && file.size <= 8 * 1024 * 1024)
-  return Promise.all(allowed.map((file) => new Promise<Photo>((resolve, reject) => {
+  const selected = Array.from(files)
+  if (selected.some(file => !file.type.startsWith('image/') || file.size > 8 * 1024 * 1024)) throw new Error('Choose image files of 8 MB or less. No photos were added.')
+  return Promise.all(selected.map((file) => new Promise<Photo>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve({ id: uid('photo'), src: String(reader.result), caption: file.name.replace(/\.[^.]+$/, '') })
-    reader.onerror = reject
+    reader.onerror = () => reject(new Error('A photo could not be read. Please choose it again.'))
+    reader.onabort = () => reject(new Error('Photo reading was cancelled. Please choose it again.'))
     reader.readAsDataURL(file)
   })))
 }
@@ -25,22 +27,27 @@ export function MemoryForm({ trip, memory, initialStopId, onClose }: { trip: Tri
   const [stopId, setStopId] = useState(memory?.stopId ?? initialStopId ?? trip.stops[0]?.id ?? '')
   const [mood, setMood] = useState(memory?.mood ?? 'Grateful')
   const [photos, setPhotos] = useState<Photo[]>(memory?.photos ?? [])
+  const [readingPhotos, setReadingPhotos] = useState(false)
+  const { saving, error, setError, save: commit } = useDurableSave()
   const stop = trip.stops.find((item) => item.id === stopId) ?? trip.stops[0]
 
   async function onFiles(event: ChangeEvent<HTMLInputElement>) {
-    if (event.target.files) {
-      const nextPhotos = await readPhotos(event.target.files)
-      setPhotos((current) => [...current, ...nextPhotos].slice(0, 8))
-    }
+    const input = event.target
+    if (!input.files || readingPhotos) return
+    if (input.files.length + photos.length > 8) { setError('A memory can contain up to 8 photos. No photos were added.'); input.value = ''; return }
+    setReadingPhotos(true)
+    setError(null)
+    try { const nextPhotos = await readPhotos(input.files); setPhotos(current => [...current, ...nextPhotos]) }
+    catch (failure) { setError(failure instanceof Error ? failure.message : 'Photos could not be read.') }
+    finally { setReadingPhotos(false); input.value = '' }
   }
 
   function save(event: FormEvent) {
     event.preventDefault()
-    if (!stop) return
+    if (!stop || readingPhotos) return
+    if (!title.trim() || !story.trim()) { setError('Enter a title and story.'); return }
     const value: Memory = { id: memory?.id ?? uid('memory'), tripId: trip.id, stopId: stop.id, title, story, date, mood, photos, place: `${stop.name}, ${stop.country}`, lat: stop.lat, lng: stop.lng }
-    if (memory) updateMemory(memory.id, value)
-    else addMemory(value)
-    onClose()
+    void commit(() => memory ? updateMemory(memory.id, value) : addMemory(value), onClose)
   }
 
   return (
@@ -51,11 +58,13 @@ export function MemoryForm({ trip, memory, initialStopId, onClose }: { trip: Tri
         <Field label="Your story"><textarea required rows={7} value={story} onChange={(event) => setStory(event.target.value)} placeholder="Write down what you never want to forget…" /></Field>
         <div className="photo-uploader">
           <div><strong>Photos</strong><span>Up to 8 images, 8 MB each. Saved privately in this browser.</span></div>
-          <label className="button secondary"><ImagePlus size={18} /> Add photos<input hidden multiple type="file" accept="image/*" onChange={onFiles} /></label>
+          <label className="button secondary"><ImagePlus size={18} /> Add photos<input hidden multiple type="file" accept="image/*" disabled={readingPhotos || saving} onChange={onFiles} /></label>
         </div>
         {photos.length > 0 && <div className="upload-grid">{photos.map((photo) => <div key={photo.id}><img src={photo.src} alt={photo.caption ?? ''} /><button type="button" onClick={() => setPhotos((current) => current.filter((item) => item.id !== photo.id))} aria-label="Remove photo"><Trash2 size={16} /></button></div>)}</div>}
         {!trip.stops.length && <p className="form-error"><MapPin size={16} /> Add a place to the trip before creating a memory.</p>}
-        <footer className="modal-actions"><button type="button" className="button ghost" onClick={onClose}>Cancel</button><button className="button primary" type="submit" disabled={!trip.stops.length}>{memory ? 'Save memory' : 'Add to journal'}</button></footer>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        {readingPhotos && <p role="status">Reading photos…</p>}
+        <footer className="modal-actions"><button type="button" className="button ghost" disabled={saving} onClick={onClose}>Cancel</button><button className="button primary" type="submit" disabled={!trip.stops.length || saving || readingPhotos}>{saving ? 'Saving…' : memory ? 'Save memory' : 'Add to journal'}</button></footer>
       </form>
     </Modal>
   )

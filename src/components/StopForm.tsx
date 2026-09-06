@@ -4,6 +4,7 @@ import { Field, Modal } from './Ui'
 import type { PlaceResult, Stop, TransportMode } from '../types'
 import { useTravelStore } from '../store/travelStore'
 import { uid } from '../lib/format'
+import { useDurableSave } from '../lib/useDurableSave'
 
 async function findPlaces(query: string): Promise<PlaceResult[]> {
   const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&accept-language=en&limit=5&q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } })
@@ -25,6 +26,7 @@ export function StopForm({ tripId, stop, onClose }: { tripId: string; stop?: Sto
   const [accommodation, setAccommodation] = useState(stop?.accommodation ?? '')
   const [activities, setActivities] = useState(stop?.activities.join(', ') ?? '')
   const [notes, setNotes] = useState(stop?.notes ?? '')
+  const { saving, error, save: commit } = useDurableSave()
 
   useEffect(() => {
     if (query.trim().length < 3 || query === stop?.name || place?.name === query) { setResults([]); return }
@@ -45,9 +47,7 @@ export function StopForm({ tripId, stop, onClose }: { tripId: string; stop?: Sto
     event.preventDefault()
     if (!place) return
     const value: Stop = { id: stop?.id ?? uid('stop'), name: place.name, country: place.country, lat: place.lat, lng: place.lng, arrivalDate, departureDate: departureDate || undefined, transport, accommodation: accommodation || undefined, activities: activities.split(',').map((item) => item.trim()).filter(Boolean), notes: notes || undefined }
-    if (stop) updateStop(tripId, stop.id, value)
-    else addStop(tripId, value)
-    onClose()
+    void commit(() => stop ? updateStop(tripId, stop.id, value) : addStop(tripId, value), onClose)
   }
 
   return (
@@ -65,7 +65,8 @@ export function StopForm({ tripId, stop, onClose }: { tripId: string; stop?: Sto
         <Field label="Things to do" hint="Separate activities with commas"><input value={activities} onChange={(event) => setActivities(event.target.value)} placeholder="Morning market, coastal walk" /></Field>
         <Field label="Notes"><textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Reservation details, ideas, little reminders…" /></Field>
         {!place && query.length > 2 && !searching && <p className="form-error">Choose a result from the place search to pin it on your route.</p>}
-        <footer className="modal-actions"><button type="button" className="button ghost" onClick={onClose}>Cancel</button><button className="button primary" type="submit" disabled={!place}>{stop ? 'Save stop' : 'Add to route'}</button></footer>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <footer className="modal-actions"><button type="button" className="button ghost" disabled={saving} onClick={onClose}>Cancel</button><button className="button primary" type="submit" disabled={!place || saving}>{saving ? 'Saving…' : stop ? 'Save stop' : 'Add to route'}</button></footer>
       </form>
     </Modal>
   )

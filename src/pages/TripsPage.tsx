@@ -18,7 +18,7 @@ export function TripsPage() {
 
   return (
     <div className="standard-page">
-      <header className="page-header"><div><p className="eyebrow">Every road has a beginning</p><h1>Your journeys</h1><p>Plan what’s next and return to everywhere you’ve been.</p></div><button className="button primary" onClick={() => setNewTrip(true)}><Plus size={18} /> New trip</button></header>
+      <header className="page-header"><div><h1>Your journeys</h1></div><button className="button primary" onClick={() => setNewTrip(true)}><Plus size={18} /> New trip</button></header>
       <div className="filter-tabs no-print">{(['all', 'planned', 'active', 'completed'] as Filter[]).map((item) => <button className={filter === item ? 'active' : ''} key={item} onClick={() => setFilter(item)}>{item}<span>{item === 'all' ? trips.length : trips.filter((trip) => trip.status === item).length}</span></button>)}</div>
       <div className="trips-list">
         {visible.map((trip) => <Link to={`/trips/${trip.id}`} className="trip-row" key={trip.id}>

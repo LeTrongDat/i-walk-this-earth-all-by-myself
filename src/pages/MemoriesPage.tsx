@@ -17,7 +17,7 @@ export function MemoriesPage() {
 
   return (
     <div className="standard-page memories-page">
-      <header className="page-header"><div><p className="eyebrow">Your living archive</p><h1>Memories</h1><p>{memories.length} stories and {photoCount(memories)} photographs, safe in your private atlas.</p></div></header>
+      <header className="page-header"><div><h1>Memories</h1><p>{memories.length} stories · {photoCount(memories)} photos saved on this device</p></div></header>
       <div className="library-tools no-print"><div className="input-with-icon library-search"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search places, stories, feelings…" /></div><select aria-label="Filter by trip" value={tripFilter} onChange={(event) => setTripFilter(event.target.value)}><option value="all">All journeys</option>{trips.map((trip) => <option key={trip.id} value={trip.id}>{trip.title}</option>)}</select></div>
       {filtered.length ? <div className="memory-library">{filtered.map((memory, index) => {
         const trip = trips.find((item) => item.id === memory.tripId)

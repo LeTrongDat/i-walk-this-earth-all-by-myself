@@ -28,6 +28,8 @@ export function TripPage() {
   const [memoryEditor, setMemoryEditor] = useState<Memory | 'new' | null>(null)
   const [memoryStop, setMemoryStop] = useState<string>()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [focusedStopId, setFocusedStopId] = useState<string>()
+  const [detailTab, setDetailTab] = useState<'plan' | 'journal'>(trip?.status === 'planned' ? 'plan' : 'journal')
 
   const memories = useMemo(() => allMemories.filter((item) => item.tripId === tripId).sort((a, b) => a.date.localeCompare(b.date)), [allMemories, tripId])
   if (!trip) return <Navigate to="/trips" replace />
@@ -40,11 +42,10 @@ export function TripPage() {
     else await navigator.clipboard.writeText(window.location.href)
   }
 
-  function removeTrip() {
+  async function removeTrip() {
     if (!trip) return
     if (window.confirm(`Delete “${trip.title}” and all of its memories? This cannot be undone.`)) {
-      deleteTrip(trip.id)
-      navigate('/trips')
+      if (await deleteTrip(trip.id)) navigate('/trips')
     }
   }
 
@@ -71,11 +72,18 @@ export function TripPage() {
       {isTracking && <div className="tracking-notice no-print"><span className="tracking-pulse" /><div><strong>Recording your route</strong><span>Keep this installed web app open while travelling. {trip.route.length} GPS points saved privately.</span></div></div>}
 
       <section className="trip-map-section trip-map-first">
-        <TravelMap trips={[trip]} memories={memories} selectedTripId={trip.id} />
-        <div className="trip-map-title"><p className="eyebrow">The route</p><h2>{trip.stops.length ? `${trip.stops[0].name} to ${trip.stops.at(-1)?.name}` : 'Your map is waiting'}</h2><p>{trip.stops.length ? 'Every line begins with a place.' : 'Add your first place to begin drawing this journey.'}</p></div>
+        <TravelMap trips={[trip]} memories={memories} selectedTripId={trip.id} focusedStopId={focusedStopId} />
+        <div className="step-carousel" aria-label="Trip steps">
+          {trip.stops.map((stop, index) => <button key={stop.id} className="step-preview" aria-pressed={focusedStopId === stop.id} onClick={() => { setFocusedStopId(stop.id); setDetailTab('plan'); document.getElementById('trip-details')?.scrollIntoView({ behavior: 'smooth' }) }}>
+            <img src={memories.find((memory) => memory.stopId === stop.id)?.photos[0]?.src || trip.cover} alt="" />
+            <span className="step-preview-number">STEP {index + 1}</span><strong>{stop.name}</strong><span>{stop.country}</span>
+          </button>)}
+          <button className="step-preview step-add" onClick={() => setStopEditor('new')}><Plus size={24} /><strong>Add a step</strong></button>
+        </div>
       </section>
 
-      <section className="trip-story-layout">
+      <div className="trip-detail-tabs atlas-tabs" id="trip-details" role="tablist" aria-label="Trip details"><button role="tab" aria-selected={detailTab === 'plan'} onClick={() => setDetailTab('plan')}>Plan · {trip.stops.length} steps</button><button role="tab" aria-selected={detailTab === 'journal'} onClick={() => setDetailTab('journal')}>Journal · {memories.length} memories</button></div>
+      <section className={`trip-story-layout detail-${detailTab}`}>
         <aside className="itinerary-panel">
           <div className="panel-heading"><div><p className="eyebrow">The plan</p><h2>Itinerary</h2></div><button className="icon-button bordered no-print" onClick={() => setStopEditor('new')} title="Add a stop"><Plus size={19} /></button></div>
           <div className="itinerary-line">
