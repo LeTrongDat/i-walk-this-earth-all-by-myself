@@ -2,8 +2,10 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { ArchiveRestore, Camera, Download, Globe2, Map, MapPin, Route, Save, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { Field, Modal } from '../components/Ui'
 import { useTravelStore } from '../store/travelStore'
-import { compactDistance, countryCount, photoCount, tripDistance } from '../lib/format'
-import type { TravelState } from '../types'
+import { compactDistance, countryCount, tripDistance } from '../lib/format'
+import { exportArchive, readArchive } from '../lib/archiveBackup'
+import { StorageTools } from '../components/StorageTools'
+import { albumEntries } from '../lib/albums'
 import type { Profile } from '../types'
 import { validateTravelData } from '../lib/validateTravelData'
 import { useDurableSave } from '../lib/useDurableSave'
@@ -16,21 +18,20 @@ export function ProfilePage() {
   const replaceData = useTravelStore((state) => state.replaceData)
   const resetAll = useTravelStore((state) => state.resetAll)
   const [editing, setEditing] = useState(false)
+  const [backupProgress, setBackupProgress] = useState('')
   const { saving: dataBusy, error: dataError, setError: setDataError, save: commitData } = useDurableSave()
   const importRef = useRef<HTMLInputElement>(null)
   const distance = trips.reduce((sum, trip) => sum + tripDistance(trip), 0)
   const countries = [...new Set(trips.flatMap((trip) => trip.stops.map((stop) => stop.country)).filter(Boolean))]
 
   async function exportData() {
-    if (!await useTravelStore.getState().refreshData()) return
-    const latest = useTravelStore.getState()
-    const payload: TravelState = { trips: latest.trips, memories: latest.memories, profile: latest.profile, trackingTripId: null, hasSeenWelcome: true }
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `i-walk-this-earth-backup-${new Date().toISOString().slice(0, 10)}.json`
-    link.click()
-    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+    setBackupProgress('Preparing full backup…'); setDataError(null)
+    try {
+      if (!await useTravelStore.getState().refreshData()) throw new Error('Could not read saved data.')
+      const latest = useTravelStore.getState()
+      await exportArchive(validateTravelData(latest), setBackupProgress)
+    } catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setDataError(e instanceof Error ? e.message : 'Backup could not be created.') }
+    finally { setBackupProgress('') }
   }
 
   async function importData(event: ChangeEvent<HTMLInputElement>) {
@@ -38,23 +39,27 @@ export function ProfilePage() {
     const file = input.files?.[0]
     if (!file) return
     try {
-      const parsed = validateTravelData(JSON.parse(await file.text()))
-      if (window.confirm(`Replace this atlas with ${parsed.trips.length} imported trips?`)) await commitData(() => replaceData(parsed), () => undefined)
+      if (!window.confirm('Replace this atlas with the backup? Export your current atlas first. Existing unrelated local photo files are retained until cleanup.')) { input.value = ""; return }
+      setBackupProgress('Reading backup…'); setDataError(null)
+      const archive = await readArchive(file, setBackupProgress)
+      if (!await replaceData(archive.data)) { await archive.cleanup(); throw new Error('Backup was not saved. Existing atlas was kept.') }
     } catch (error) { setDataError(error instanceof Error ? error.message : 'That file is not a valid I Walk This Earth backup.') }
-    input.value = ''
+    input.value = ''; setBackupProgress('')
   }
 
   return (
     <div className="profile-page">
+      {backupProgress && <p className="storage-tools" role="status">{backupProgress}</p>}
+      <StorageTools />
       {dataError && <p className="form-error" role="alert">{dataError}</p>}
       <section className="profile-hero">
         <div className="profile-avatar">{profile.avatar ? <img src={profile.avatar} alt="" /> : <span>{profile.name.split(' ').map((part) => part[0]).join('').slice(0, 2)}</span>}<button onClick={() => setEditing(true)} className="no-print"><Camera size={17} /></button></div>
         <div className="profile-intro"><p className="eyebrow">The traveller</p><h1>{profile.name}</h1><p><MapPin size={16} /> {profile.home}</p><span>{profile.bio}</span><button className="button light no-print" onClick={() => setEditing(true)}>Edit profile</button></div>
       </section>
-      <section className="profile-stats"><div><Globe2 size={22} /><strong>{countryCount(trips)}</strong><span>countries</span></div><div><Map size={22} /><strong>{trips.length}</strong><span>journeys</span></div><div><Route size={22} /><strong>{compactDistance(distance)}</strong><span>travelled</span></div><div><Camera size={22} /><strong>{photoCount(memories)}</strong><span>photos</span></div></section>
+      <section className="profile-stats"><div><Globe2 size={22} /><strong>{countryCount(trips)}</strong><span>countries</span></div><div><Map size={22} /><strong>{trips.length}</strong><span>journeys</span></div><div><Route size={22} /><strong>{compactDistance(distance)}</strong><span>travelled</span></div><div><Camera size={22} /><strong>{albumEntries(trips, memories).length}</strong><span>photos</span></div></section>
       <section className="profile-body">
         <div className="passport-panel"><p className="eyebrow">Your passport</p><h2>Places that changed<br />your map.</h2><div className="country-cloud">{countries.length ? countries.map((country, index) => <span className={`country-stamp stamp-${index % 4}`} key={country}>{country}</span>) : <p>Your first country will appear here.</p>}</div></div>
-        <div className="data-panel"><p className="eyebrow">Your data</p><h2>A private atlas,<br />under your control.</h2><p>Trips and uploaded photos stay in this browser using IndexedDB. Export a backup regularly or move your atlas to another device.</p><div className="privacy-note"><ShieldCheck size={22} /><span><strong>Local by design</strong>No account, ad tracker, or personal-location server.</span></div><div className="data-actions no-print"><button className="button secondary" disabled={dataBusy} onClick={exportData}><Download size={17} /> Export backup</button><button className="button secondary" disabled={dataBusy} onClick={() => importRef.current?.click()}><Upload size={17} /> Import backup</button><input ref={importRef} type="file" accept="application/json" hidden disabled={dataBusy} onChange={importData} /><button className="button danger-button" disabled={dataBusy} onClick={() => { if (window.confirm('Reset the entire atlas to its original sample journeys? Your current local data will be replaced.')) void commitData(resetAll, () => undefined) }}><ArchiveRestore size={17} /> Reset sample</button></div></div>
+        <div className="data-panel"><p className="eyebrow">Your data</p><h2>A private atlas,<br />under your control.</h2><p>Trips and uploaded photos stay in this browser using IndexedDB. Full ZIP backups include original album photos, thumbnails, and plans. Older JSON backups can also be imported. ZIP backups support up to 3.8 GB; keep original-file copies for larger libraries.</p><div className="privacy-note"><ShieldCheck size={22} /><span><strong>Local by design</strong>No account, ad tracker, or personal-location server.</span></div><div className="data-actions no-print"><button className="button secondary" disabled={dataBusy || !!backupProgress} onClick={exportData}><Download size={17} /> Export backup</button><button className="button secondary" disabled={dataBusy || !!backupProgress} onClick={() => importRef.current?.click()}><Upload size={17} /> Import backup</button><input ref={importRef} type="file" accept="application/json,application/zip,.zip" hidden disabled={dataBusy || !!backupProgress} onChange={importData} /><button className="button danger-button" disabled={dataBusy || !!backupProgress} onClick={() => { if (window.confirm('Reset the entire atlas to its original sample journeys? Your current local data will be replaced.')) void commitData(resetAll, () => undefined) }}><ArchiveRestore size={17} /> Reset sample</button></div></div>
       </section>
       {editing && <ProfileForm onClose={() => setEditing(false)} current={profile} onSave={updateProfile} />}
     </div>

@@ -1,4 +1,4 @@
-import type { Memory, Photo, Profile, RoutePoint, Stop, TravelState, Trip } from '../types'
+import type { DayPlan, Memory, Photo, Place, Profile, RoutePoint, Stop, TravelState, Trip, Visit } from '../types'
 
 function invalid(path: string): never { throw new Error(`Invalid atlas data: ${path}.`) }
 function object(value: unknown, path: string): Record<string, unknown> {
@@ -44,7 +44,33 @@ function unique<T extends { id: string }>(items: T[], path: string): T[] {
 }
 function photo(value: unknown, path: string): Photo {
   const v = object(value, path)
-  return { id: string(v.id, `${path}.id`, true), src: string(v.src, `${path}.src`, true), caption: optional(v.caption, `${path}.caption`) }
+  const src = string(v.src, `${path}.src`, true)
+  if (!/^(https?:\/\/|local-photo:[a-zA-Z0-9_-]+$|data:image\/[a-z0-9.+-]+;base64,)/i.test(src)) invalid(`${path}: unsupported photo source`)
+  return { id: string(v.id, `${path}.id`, true), src, caption: optional(v.caption, `${path}.caption`), name: optional(v.name, path), date: v.date ? date(v.date, path) : undefined, favorite: v.favorite === undefined ? undefined : boolean(v.favorite, path) }
+}
+function boolean(value: unknown, path: string): boolean {
+  if (typeof value !== 'boolean') return invalid(path)
+  return value
+}
+function link(value: unknown, path: string): string {
+  const text = string(value, path)
+  if (text && !/^https?:\/\//i.test(text)) return invalid(`${path}: use an http or https link`)
+  return text
+}
+function place(value: unknown, path: string): Place {
+  const v = object(value, path)
+  const point = v.lat === undefined && v.lng === undefined ? {} : coordinates(v, path)
+  return { id: string(v.id, path, true), name: string(v.name, path, true), category: choice(v.category, path, ['sight', 'restaurant', 'stay', 'photo', 'other']), address: string(v.address, path), mapUrl: link(v.mapUrl, path), ...point, notes: string(v.notes, path), ideas: string(v.ideas, path), links: list(v.links, path, link), visited: boolean(v.visited, path), photos: unique(list(v.photos, path, photo), path) }
+}
+function visit(value: unknown, path: string): Visit {
+  const v = object(value, path)
+  const time = string(v.time, path)
+  if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return invalid(path)
+  return { id: string(v.id, path, true), placeId: string(v.placeId, path, true), time, duration: number(v.duration, path, 0, 1440), fixed: boolean(v.fixed, path), notes: string(v.notes, path) }
+}
+function day(value: unknown, path: string): DayPlan {
+  const v = object(value, path)
+  return { id: string(v.id, path, true), date: date(v.date, path), cityId: string(v.cityId, path, true), accommodationId: string(v.accommodationId, path), returnToStay: boolean(v.returnToStay, path), notes: string(v.notes, path), visits: unique(list(v.visits, path, visit), path) }
 }
 function stop(value: unknown, path: string): Stop {
   const v = object(value, path)
@@ -56,7 +82,7 @@ function stop(value: unknown, path: string): Stop {
     ...coordinates(v, path), arrivalDate, departureDate,
     transport: choice(v.transport, `${path}.transport`, ['walk', 'bike', 'car', 'train', 'boat', 'flight', 'other']),
     activities: list(v.activities, `${path}.activities`, (item, p) => string(item, p, true)),
-    notes: optional(v.notes, `${path}.notes`), accommodation: optional(v.accommodation, `${path}.accommodation`)
+    notes: optional(v.notes, `${path}.notes`), accommodation: optional(v.accommodation, `${path}.accommodation`), places: v.places === undefined ? undefined : unique(list(v.places, path, place), path)
   }
 }
 function routePoint(value: unknown, path: string): RoutePoint {
@@ -72,7 +98,7 @@ function trip(value: unknown, path: string): Trip {
     id: string(v.id, `${path}.id`, true), title: string(v.title, `${path}.title`, true), summary: string(v.summary, `${path}.summary`), cover: string(v.cover, `${path}.cover`),
     startDate, endDate, status: choice(v.status, `${path}.status`, ['planned', 'active', 'completed']), visibility: choice(v.visibility, `${path}.visibility`, ['private', 'link', 'public']),
     createdAt: timestamp(v.createdAt, `${path}.createdAt`), updatedAt: timestamp(v.updatedAt, `${path}.updatedAt`),
-    stops: unique(list(v.stops, `${path}.stops`, stop), `${path}.stops`), route: unique(list(v.route, `${path}.route`, routePoint), `${path}.route`)
+    stops: unique(list(v.stops, `${path}.stops`, stop), `${path}.stops`), route: unique(list(v.route, `${path}.route`, routePoint), `${path}.route`), days: v.days === undefined ? undefined : unique(list(v.days, path, day), path)
   }
 }
 function memory(value: unknown, path: string): Memory {
@@ -94,6 +120,14 @@ export function validateTravelData(value: unknown): TravelState {
   const v = object(value, 'atlas')
   const trips = unique(list(v.trips, 'trips', trip), 'trips')
   unique(trips.flatMap(item => item.stops), 'stops')
+  unique(trips.flatMap(item => item.stops.flatMap(city => city.places ?? [])), 'places')
+  for (const trip of trips) for (const day of trip.days ?? []) {
+    const city = trip.stops.find(city => city.id === day.cityId)
+    if (!city) invalid('day: missing city')
+    const places = city!.places ?? []
+    if (day.accommodationId && !places.some(p => p.id === day.accommodationId && p.category === 'stay')) invalid('day: missing accommodation')
+    for (const visit of day.visits) if (!places.some(p => p.id === visit.placeId)) invalid('visit: missing place')
+  }
   const memories = unique(list(v.memories, 'memories', memory), 'memories')
   for (const item of memories) {
     const parent = trips.find(t => t.id === item.tripId)

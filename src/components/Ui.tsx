@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { Children, cloneElement, isValidElement, useId, useEffect, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 
 export function Modal({ title, eyebrow, onClose, children, size = 'medium' }: { title: string; eyebrow?: string; onClose: () => void; children: ReactNode; size?: 'small' | 'medium' | 'large' }) {
@@ -44,5 +44,6 @@ export function StatusPill({ status }: { status: string }) {
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return <label className="field"><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>
+  const id = useId()
+  return <label className="field"><span id={id}>{label}</span>{Children.map(children, child => isValidElement(child) && ['input', 'select', 'textarea'].includes(String(child.type)) ? cloneElement(child as React.ReactElement<Record<string, unknown>>, { 'aria-labelledby': id, 'aria-describedby': hint ? `${id}-hint` : undefined }) : child)}{hint && <small id={`${id}-hint`}>{hint}</small>}</label>
 }

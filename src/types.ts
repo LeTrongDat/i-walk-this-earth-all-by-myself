@@ -11,6 +11,43 @@ export interface Photo {
   id: string
   src: string
   caption?: string
+  name?: string
+  date?: string
+  favorite?: boolean
+}
+
+export interface Place {
+  id: string
+  name: string
+  category: 'sight' | 'restaurant' | 'stay' | 'photo' | 'other'
+  address: string
+  mapUrl: string
+  lat?: number
+  lng?: number
+  notes: string
+  ideas: string
+  links: string[]
+  visited: boolean
+  photos: Photo[]
+}
+
+export interface Visit {
+  id: string
+  placeId: string
+  time: string
+  duration: number
+  fixed: boolean
+  notes: string
+}
+
+export interface DayPlan {
+  id: string
+  date: string
+  cityId: string
+  accommodationId: string
+  returnToStay: boolean
+  notes: string
+  visits: Visit[]
 }
 
 export interface Stop extends Coordinates {
@@ -23,6 +60,7 @@ export interface Stop extends Coordinates {
   accommodation?: string
   transport: TransportMode
   activities: string[]
+  places?: Place[]
 }
 
 export interface Memory extends Coordinates {
@@ -56,6 +94,7 @@ export interface Trip {
   route: RoutePoint[]
   createdAt: string
   updatedAt: string
+  days?: DayPlan[]
 }
 
 export interface Profile {

@@ -34,7 +34,6 @@ export function MemoryForm({ trip, memory, initialStopId, onClose }: { trip: Tri
   async function onFiles(event: ChangeEvent<HTMLInputElement>) {
     const input = event.target
     if (!input.files || readingPhotos) return
-    if (input.files.length + photos.length > 8) { setError('A memory can contain up to 8 photos. No photos were added.'); input.value = ''; return }
     setReadingPhotos(true)
     setError(null)
     try { const nextPhotos = await readPhotos(input.files); setPhotos(current => [...current, ...nextPhotos]) }
@@ -47,7 +46,7 @@ export function MemoryForm({ trip, memory, initialStopId, onClose }: { trip: Tri
     if (!stop || readingPhotos) return
     if (!title.trim() || !story.trim()) { setError('Enter a title and story.'); return }
     const value: Memory = { id: memory?.id ?? uid('memory'), tripId: trip.id, stopId: stop.id, title, story, date, mood, photos, place: `${stop.name}, ${stop.country}`, lat: stop.lat, lng: stop.lng }
-    void commit(() => memory ? updateMemory(memory.id, value) : addMemory(value), onClose)
+    void commit(() => memory ? updateMemory(memory.id, value, memory.photos) : addMemory(value), onClose)
   }
 
   return (
@@ -57,7 +56,7 @@ export function MemoryForm({ trip, memory, initialStopId, onClose }: { trip: Tri
         <div className="form-grid"><Field label="Place"><select required value={stopId} onChange={(event) => setStopId(event.target.value)}>{trip.stops.map((item) => <option key={item.id} value={item.id}>{item.name}, {item.country}</option>)}</select></Field><Field label="How did it feel?"><input value={mood} onChange={(event) => setMood(event.target.value)} placeholder="Alive, peaceful, curious…" /></Field></div>
         <Field label="Your story"><textarea required rows={7} value={story} onChange={(event) => setStory(event.target.value)} placeholder="Write down what you never want to forget…" /></Field>
         <div className="photo-uploader">
-          <div><strong>Photos</strong><span>Up to 8 images, 8 MB each. Saved privately in this browser.</span></div>
+          <div><strong>Photos</strong><span>8 MB per image in notes. Use place albums for bulk originals.</span></div>
           <label className="button secondary"><ImagePlus size={18} /> Add photos<input hidden multiple type="file" accept="image/*" disabled={readingPhotos || saving} onChange={onFiles} /></label>
         </div>
         {photos.length > 0 && <div className="upload-grid">{photos.map((photo) => <div key={photo.id}><img src={photo.src} alt={photo.caption ?? ''} /><button type="button" onClick={() => setPhotos((current) => current.filter((item) => item.id !== photo.id))} aria-label="Remove photo"><Trash2 size={16} /></button></div>)}</div>}

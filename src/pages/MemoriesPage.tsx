@@ -1,29 +1,26 @@
 import { useMemo, useState } from 'react'
-import { Images, MapPin, Search } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { useTravelStore } from '../store/travelStore'
-import { formatDate, photoCount } from '../lib/format'
+import { albumEntries } from '../lib/albums'
+import { AlbumGallery } from '../components/AlbumGallery'
 
 export function MemoriesPage() {
-  const memories = useTravelStore((state) => state.memories)
-  const trips = useTravelStore((state) => state.trips)
+  const { trips, memories } = useTravelStore()
+  const [tripId, setTripId] = useState('')
+  const [country, setCountry] = useState('')
+  const [cityId, setCityId] = useState('')
+  const [placeId, setPlaceId] = useState('')
+  const [favorites, setFavorites] = useState(false)
   const [query, setQuery] = useState('')
-  const [tripFilter, setTripFilter] = useState('all')
-  const filtered = useMemo(() => memories.filter((memory) => {
-    const matchesTrip = tripFilter === 'all' || memory.tripId === tripFilter
-    const text = `${memory.title} ${memory.place} ${memory.story}`.toLowerCase()
-    return matchesTrip && text.includes(query.toLowerCase())
-  }).sort((a, b) => b.date.localeCompare(a.date)), [memories, query, tripFilter])
-
-  return (
-    <div className="standard-page memories-page">
-      <header className="page-header"><div><h1>Memories</h1><p>{memories.length} stories · {photoCount(memories)} photos saved on this device</p></div></header>
-      <div className="library-tools no-print"><div className="input-with-icon library-search"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search places, stories, feelings…" /></div><select aria-label="Filter by trip" value={tripFilter} onChange={(event) => setTripFilter(event.target.value)}><option value="all">All journeys</option>{trips.map((trip) => <option key={trip.id} value={trip.id}>{trip.title}</option>)}</select></div>
-      {filtered.length ? <div className="memory-library">{filtered.map((memory, index) => {
-        const trip = trips.find((item) => item.id === memory.tripId)
-        const image = memory.photos[0]?.src || trip?.cover
-        return <Link className={`library-card card-shape-${index % 4}`} to={`/trips/${memory.tripId}`} key={memory.id}>{image && <div className="library-image"><img src={image} alt="" />{memory.photos.length > 1 && <span>+{memory.photos.length - 1}</span>}</div>}<div className="library-copy"><p><MapPin size={14} /> {memory.place}</p><h2>{memory.title}</h2><span>{memory.story}</span><footer><time>{formatDate(memory.date)}</time><em>{memory.mood}</em></footer></div></Link>
-      })}</div> : <div className="empty-filter"><Images size={30} /><h3>No memories found</h3><p>Try another search, or add a memory from one of your trips.</p></div>}
-    </div>
-  )
+  const [order, setOrder] = useState('oldest')
+  const entries = useMemo(() => albumEntries(trips, memories), [trips, memories])
+  const cities = trips.filter(t => !tripId || t.id === tripId).flatMap(t => t.stops).filter(c => !country || c.country === country)
+  const filtered = entries.filter(e => (!tripId || e.tripId === tripId) && (!country || e.country === country) && (!cityId || e.cityId === cityId) && (!placeId || e.placeId === placeId) && (!favorites || e.photo.favorite) && `${e.place} ${e.city} ${e.photo.caption} ${e.photo.name}`.toLowerCase().includes(query.toLowerCase())).sort((a, b) => (a.photo.date || '').localeCompare(b.photo.date || '') * (order === 'newest' ? -1 : 1))
+  return <div className="standard-page archive-library"><header className="page-header"><div><h1>Photo library</h1><p>All your places, photos, and small moments. Stored on this device.</p></div></header><div className="library-filters">
+    <input aria-label="Search photo library" placeholder="Search captions, cities, places…" value={query} onChange={e => setQuery(e.target.value)} />
+    <select aria-label="Filter by trip" value={tripId} onChange={e => { setTripId(e.target.value); setCountry(''); setCityId(''); setPlaceId('') }}><option value="">All trips</option>{trips.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}</select>
+    <select aria-label="Filter by country" value={country} onChange={e => { setCountry(e.target.value); setCityId(''); setPlaceId('') }}><option value="">All countries</option>{[...new Set(trips.filter(t => !tripId || t.id === tripId).flatMap(t => t.stops.map(c => c.country)))].map(c => <option key={c}>{c}</option>)}</select>
+    <select aria-label="Filter by city" value={cityId} onChange={e => { setCityId(e.target.value); setPlaceId('') }}><option value="">All cities</option>{cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+    <select aria-label="Filter by place" value={placeId} onChange={e => setPlaceId(e.target.value)}><option value="">All places</option>{cities.filter(c => !cityId || c.id === cityId).flatMap(c => c.places ?? []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+    <select aria-label="Photo order" value={order} onChange={e => setOrder(e.target.value)}><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select><label><input type="checkbox" checked={favorites} onChange={e => setFavorites(e.target.checked)} /> Favourites only</label>
+  </div><AlbumGallery key={`${tripId}-${country}-${cityId}-${placeId}-${favorites}-${order}-${query}`} entries={filtered} title={placeId ? cities.flatMap(c => c.places || []).find(p => p.id === placeId)?.name : cityId ? cities.find(c => c.id === cityId)?.name : country || 'All photos'} /></div>
 }

@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useState, type ChangeEvent } from 'react'
-import { validateTravelData } from './lib/validateTravelData'
+import { readArchive } from './lib/archiveBackup'
 import { AppShell } from './components/AppShell'
 import { WorldPage } from './pages/WorldPage'
 import { TripsPage } from './pages/TripsPage'
@@ -8,6 +8,7 @@ import { TripPage } from './pages/TripPage'
 import { MemoriesPage } from './pages/MemoriesPage'
 import { DiscoverPage } from './pages/DiscoverPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { BookPage } from './pages/BookPage'
 import { useTravelStore } from './store/travelStore'
 import { useLocationTracking } from './hooks/useLocationTracking'
 
@@ -27,14 +28,15 @@ export default function App() {
     setRecoveryError(null)
     setRecovering(true)
     try {
-      const data = validateTravelData(JSON.parse(await file.text()))
-      if (window.confirm(`Replace the saved atlas with ${data.trips.length} imported trips? Download a recovery copy first if you need the old data.`)) await useTravelStore.getState().replaceData(data)
+      if (!window.confirm('Replace the saved atlas with this backup? Download a recovery copy first if you need the old data.')) return
+      const archive = await readArchive(file, () => undefined)
+      if (!await useTravelStore.getState().replaceData(archive.data)) await archive.cleanup()
     } catch (error) { setRecoveryError(error instanceof Error ? error.message : 'That backup could not be imported.') }
     finally { input.value = ''; setRecovering(false) }
   }
 
   if (!hydrated) {
-    return <div className="splash"><div className="brand-mark"><span /></div>{storageError ? <div role="alert"><p>{storageError}</p><button className="button primary" disabled={recovering} onClick={() => void refreshData()}>Retry opening atlas</button><button className="button secondary" onClick={() => void useTravelStore.getState().downloadRawData()}>Download recovery copy</button><label className="button secondary">Import recovery backup<input type="file" accept="application/json" disabled={recovering} onChange={importRecovery} /></label><button className="button danger-button" disabled={recovering} onClick={async () => { if (window.confirm('Replace the saved atlas with sample journeys? Download a recovery copy first if you need the old data.')) { setRecovering(true); await useTravelStore.getState().resetAll(); setRecovering(false) } }}>Reset to sample journeys</button>{recoveryError && <p>{recoveryError}</p>}</div> : <p>Opening your atlas…</p>}</div>
+    return <div className="splash"><div className="brand-mark"><span /></div>{storageError ? <div role="alert"><p>{storageError}</p><button className="button primary" disabled={recovering} onClick={() => void refreshData()}>Retry opening atlas</button><button className="button secondary" onClick={() => void useTravelStore.getState().downloadRawData()}>Download recovery copy</button><label className="button secondary">Import recovery backup<input type="file" accept="application/json,application/zip,.zip" disabled={recovering} onChange={importRecovery} /></label><button className="button danger-button" disabled={recovering} onClick={async () => { if (window.confirm('Replace the saved atlas with sample journeys? Download a recovery copy first if you need the old data.')) { setRecovering(true); await useTravelStore.getState().resetAll(); setRecovering(false) } }}>Reset to sample journeys</button>{recoveryError && <p>{recoveryError}</p>}</div> : <p>Opening your atlas…</p>}</div>
   }
 
   return (
@@ -45,6 +47,7 @@ export default function App() {
         <Route index element={<WorldPage />} />
         <Route path="trips" element={<TripsPage />} />
         <Route path="trips/:tripId" element={<TripPage />} />
+        <Route path="trips/:tripId/book" element={<BookPage />} />
         <Route path="memories" element={<MemoriesPage />} />
         <Route path="discover" element={<DiscoverPage />} />
         <Route path="profile" element={<ProfilePage />} />

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { ImagePlus } from 'lucide-react'
 import { Modal, Field } from './Ui'
 import { useTravelStore } from '../store/travelStore'
-import type { Trip, TripStatus, TripVisibility } from '../types'
+import type { Trip, TripStatus } from '../types'
 import { uid } from '../lib/format'
 import { useDurableSave } from '../lib/useDurableSave'
 
@@ -17,7 +17,7 @@ export function TripForm({ trip, onClose, onSaved }: { trip?: Trip; onClose: () 
   const [startDate, setStartDate] = useState(trip?.startDate ?? new Date().toISOString().slice(0, 10))
   const [endDate, setEndDate] = useState(trip?.endDate ?? '')
   const [status, setStatus] = useState<TripStatus>(trip?.status ?? 'planned')
-  const [visibility, setVisibility] = useState<TripVisibility>(trip?.visibility ?? 'private')
+  const visibility = 'private' as const
   const { saving, error, setError, save: commit } = useDurableSave()
 
   function save(event: FormEvent) {
@@ -43,7 +43,7 @@ export function TripForm({ trip, onClose, onSaved }: { trip?: Trip; onClose: () 
         </Field>
         <div className="form-grid">
           <Field label="Journey state"><select value={status} onChange={(event) => setStatus(event.target.value as TripStatus)}><option value="planned">Planned</option><option value="active">Travelling now</option><option value="completed">Completed</option></select></Field>
-          <Field label="Privacy" hint="Stored on this device only. Public sharing is not available."><select value={visibility} onChange={(event) => setVisibility(event.target.value as TripVisibility)}><option value="private">Only me</option><option value="link">Link sharing preference (not published)</option><option value="public">Public preference (not published)</option></select></Field>
+          <p className="local-help">Private, on this device. No posts, public profile, or cloud upload.</p>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         <footer className="modal-actions"><button type="button" className="button ghost" disabled={saving} onClick={onClose}>Cancel</button><button className="button primary" type="submit" disabled={saving}>{saving ? 'Saving…' : trip ? 'Save changes' : 'Create trip'}</button></footer>

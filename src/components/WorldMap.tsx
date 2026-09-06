@@ -65,7 +65,7 @@ export function WorldMap({ trips, memories = [], selectedTripId, focusedStopId, 
     }
     const bounds = new LngLatBounds()
     points.forEach((point) => bounds.extend([point.lng, point.lat]))
-    map.fitBounds(bounds, { padding: selectedTrip ? { top: 65, bottom: 210, left: 60, right: 60 } : 70, maxZoom: selectedTrip ? 7 : 4, duration: 1200 })
+    map.fitBounds(bounds, { padding: selectedTrip ? 45 : 70, maxZoom: selectedTrip ? 7 : 4, duration: 1200 })
   }, [selectedTrip, trips, focusedStopId])
 
   useEffect(() => { if (ready) fitRoute() }, [ready, fitRoute])
@@ -128,7 +128,7 @@ export function WorldMap({ trips, memories = [], selectedTripId, focusedStopId, 
           const memory = memories.find((item) => item.stopId === stop.id)
           const photo = memory?.photos[0]?.src
           return <Marker key={stop.id} longitude={stop.lng} latitude={stop.lat} anchor="center">
-            <button className={`map-marker marker-${trip.status}${photo ? ' photo-marker' : ''}`} onClick={() => { onSelectTrip?.(trip.id); if (!onSelectTrip) mapRef.current?.flyTo({ center: [stop.lng, stop.lat], zoom: 9, padding: { top: 50, bottom: 200, left: 30, right: 30 } }) }} aria-label={`${stop.name}, ${stop.country} · ${trip.title} · Step ${index + 1}`} title={`${stop.name}, ${stop.country} · ${trip.title} · Step ${index + 1}`}>
+            <button className={`map-marker marker-${trip.status}${photo ? ' photo-marker' : ''}`} onClick={() => { onSelectTrip?.(trip.id); if (!onSelectTrip) mapRef.current?.flyTo({ center: [stop.lng, stop.lat], zoom: 9, padding: { top: 50, bottom: 200, left: 30, right: 30 } }) }} aria-label={`${stop.name}, ${stop.country} · ${trip.title} · Location ${index + 1}`} title={`${stop.name}, ${stop.country} · ${trip.title} · Location ${index + 1}`}>
               {photo ? <img src={photo} alt="" /> : <i />}
             </button>
           </Marker>

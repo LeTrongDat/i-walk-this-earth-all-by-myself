@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { get, update } from 'idb-keyval'
 import { sampleMemories, sampleTrips } from '../data/sample'
 import { validateTravelData } from '../lib/validateTravelData'
-import type { Memory, Profile, RoutePoint, Stop, TravelState, Trip } from '../types'
+import type { DayPlan, Memory, Photo, Place, Profile, RoutePoint, Stop, TravelState, Trip } from '../types'
 
 const key = 'i-walk-this-earth-data-v1'
 type Result = Promise<boolean>
@@ -19,7 +19,7 @@ type Store = TravelState & {
   updateStop: (tripId: string, stopId: string, patch: Partial<Stop>) => Result
   deleteStop: (tripId: string, stopId: string) => Result
   addMemory: (memory: Memory) => Result
-  updateMemory: (id: string, patch: Partial<Memory>) => Result
+  updateMemory: (id: string, patch: Partial<Memory>, previousPhotos?: Photo[]) => Result
   deleteMemory: (id: string) => Result
   addRoutePoint: (tripId: string, point: RoutePoint) => Result
   setTrackingTrip: (tripId: string | null) => Result
@@ -27,6 +27,12 @@ type Store = TravelState & {
   dismissWelcome: () => Result
   replaceData: (data: TravelState) => Result
   resetAll: () => Result
+  savePlace: (tripId: string, cityId: string, place: Place) => Result
+  deletePlace: (tripId: string, cityId: string, placeId: string) => Result
+  albumPhoto: (tripId: string, cityId: string, placeId: string, photo: Photo, remove?: boolean) => Result
+  editAlbumPhoto: (tripId: string, cityId: string, placeId: string, memoryId: string | undefined, photoId: string, patch: Partial<Photo> | null) => Result
+  saveDay: (tripId: string, day: DayPlan, previous?: DayPlan) => Result
+  deleteDay: (tripId: string, dayId: string) => Result
 }
 
 const initialState: TravelState = {
@@ -103,19 +109,25 @@ export const useTravelStore = create<Store>((setState) => {
     addStop: (tripId, stop) => mutate(state => changeTrip(state, tripId, trip => ({ ...trip, stops: [...trip.stops, stop].sort((a, b) => a.arrivalDate.localeCompare(b.arrivalDate)) }))),
     updateStop: (tripId, stopId, patch) => mutate(state => changeTrip(state, tripId, trip => {
       requireId(trip.stops, stopId)
-      return { ...trip, stops: trip.stops.map(s => s.id === stopId ? { ...s, ...patch, id: stopId } : s).sort((a, b) => a.arrivalDate.localeCompare(b.arrivalDate)) }
+      return { ...trip, stops: trip.stops.map(s => s.id === stopId ? { ...s, ...patch, places: s.places, id: stopId } : s).sort((a, b) => a.arrivalDate.localeCompare(b.arrivalDate)) }
     })),
     deleteStop: (tripId, stopId) => mutate(state => {
       const next = changeTrip(state, tripId, trip => {
         requireId(trip.stops, stopId)
-        return { ...trip, stops: trip.stops.filter(s => s.id !== stopId) }
+        return { ...trip, stops: trip.stops.filter(s => s.id !== stopId), days: trip.days?.filter(d => d.cityId !== stopId) }
       })
       return { ...next, memories: state.memories.map(m => m.tripId === tripId && m.stopId === stopId ? { ...m, stopId: undefined } : m) }
     }),
     addMemory: memory => mutate(state => ({ ...state, memories: [memory, ...state.memories] })),
-    updateMemory: (id, patch) => mutate(state => {
+    updateMemory: (id, patch, previousPhotos) => mutate(state => {
       requireId(state.memories, id)
-      return { ...state, memories: state.memories.map(m => m.id === id ? { ...m, ...patch, id } : m) }
+      return { ...state, memories: state.memories.map(m => {
+        if (m.id !== id) return m
+        const removed = previousPhotos?.filter(p => !patch.photos?.some(next => next.id === p.id)).map(p => p.id) ?? []
+        const added = patch.photos?.filter(p => !previousPhotos?.some(old => old.id === p.id)) ?? []
+        const photos = previousPhotos && patch.photos ? [...m.photos.filter(p => !removed.includes(p.id)), ...added.filter(p => !m.photos.some(old => old.id === p.id))] : patch.photos ?? m.photos
+        return { ...m, ...patch, photos, id }
+      }) }
     }),
     deleteMemory: id => mutate(state => {
       requireId(state.memories, id)
@@ -126,7 +138,44 @@ export const useTravelStore = create<Store>((setState) => {
     updateProfile: profile => mutate(state => ({ ...state, profile: { ...state.profile, ...profile } })),
     dismissWelcome: () => mutate(state => ({ ...state, hasSeenWelcome: true })),
     replaceData: data => mutate(() => ({ ...validateTravelData(data), trackingTripId: null }), true),
-    resetAll: () => mutate(() => validateTravelData(initialState), true)
+    resetAll: () => mutate(() => validateTravelData(initialState), true),
+    savePlace: (tripId, cityId, place) => mutate(state => changeTrip(state, tripId, trip => {
+      const city = requireId(trip.stops, cityId)
+      const existing = city.places?.find(p => p.id === place.id)
+      const places = existing ? city.places!.map(p => p.id === place.id ? { ...place, photos: p.photos } : p) : [...city.places ?? [], place]
+      return { ...trip, stops: trip.stops.map(c => c.id === cityId ? { ...c, places } : c) }
+    })),
+    deletePlace: (tripId, cityId, placeId) => mutate(state => changeTrip(state, tripId, trip => ({ ...trip,
+      stops: trip.stops.map(c => c.id === cityId ? { ...c, places: c.places?.filter(p => p.id !== placeId) } : c),
+      days: trip.days?.map(d => ({ ...d, accommodationId: d.accommodationId === placeId ? '' : d.accommodationId, visits: d.visits.filter(v => v.placeId !== placeId) }))
+    }))),
+    albumPhoto: (tripId, cityId, placeId, photo, remove) => mutate(state => changeTrip(state, tripId, trip => {
+      const city = requireId(trip.stops, cityId)
+      const place = requireId(city.places ?? [], placeId)
+      const photos = remove ? place.photos.filter(p => p.id !== photo.id) : place.photos.some(p => p.id === photo.id) ? place.photos.map(p => p.id === photo.id ? photo : p) : [...place.photos, photo]
+      return { ...trip, stops: trip.stops.map(c => c.id === cityId ? { ...c, places: c.places!.map(p => p.id === placeId ? { ...p, photos } : p) } : c) }
+    })),
+    editAlbumPhoto: (tripId, cityId, placeId, memoryId, photoId, patch) => mutate(state => {
+      function edit(photos: Photo[]) {
+        requireId(photos, photoId)
+        return patch === null ? photos.filter(p => p.id !== photoId) : photos.map(p => p.id === photoId ? { ...p, ...patch, id: p.id, src: p.src } : p)
+      }
+      if (memoryId) {
+        requireId(state.memories, memoryId)
+        return { ...state, memories: state.memories.map(m => m.id === memoryId ? { ...m, photos: edit(m.photos) } : m) }
+      }
+      return changeTrip(state, tripId, trip => {
+        const city = requireId(trip.stops, cityId)
+        requireId(city.places ?? [], placeId)
+        return { ...trip, stops: trip.stops.map(c => c.id === cityId ? { ...c, places: c.places!.map(p => p.id === placeId ? { ...p, photos: edit(p.photos) } : p) } : c) }
+      })
+    }),
+    saveDay: (tripId, day, previous) => mutate(state => changeTrip(state, tripId, trip => {
+      const current = trip.days?.find(d => d.id === day.id)
+      if (previous ? JSON.stringify(current) !== JSON.stringify(previous) : !!current) throw new Error('This day changed in another view. Reopen it before saving; your saved plan was not overwritten.')
+      return { ...trip, days: (current ? trip.days!.map(d => d.id === day.id ? day : d) : [...trip.days ?? [], day]).sort((a, b) => a.date.localeCompare(b.date)) }
+    })),
+    deleteDay: (tripId, dayId) => mutate(state => changeTrip(state, tripId, trip => ({ ...trip, days: trip.days?.filter(d => d.id !== dayId) })))
   }
 })
 

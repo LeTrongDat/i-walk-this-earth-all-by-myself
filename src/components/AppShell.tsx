@@ -6,7 +6,7 @@ import { useTravelStore } from '../store/travelStore'
 const navigation = [
   { to: '/', label: 'World', icon: Map },
   { to: '/trips', label: 'Trips', icon: MapPinned },
-  { to: '/memories', label: 'Memories', icon: Images },
+  { to: '/memories', label: 'Photos', icon: Images },
   { to: '/discover', label: 'Discover', icon: Compass },
   { to: '/profile', label: 'You', icon: UserRound }
 ]
